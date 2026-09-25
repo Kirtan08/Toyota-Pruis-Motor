@@ -28,7 +28,7 @@ def run_torque_vs_current_sweep():
     # Rotor position is set once and never touched again.
     femm.mi_modifyboundprop(
         simulation.SLIDING_BAND_NAME, 10,
-        config.MaxTorqueInitialAngle - config.SectorAngle + 30,
+        config.MaxTorqueInitialAngle - config.SectorAngle,
     )
 
     all_currents = []
