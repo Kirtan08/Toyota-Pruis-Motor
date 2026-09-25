@@ -172,19 +172,6 @@ CoggingNumPeriods = CoggingSweepAngle / CoggingPeriodAngle
 CoggingNumSteps = int(round(CoggingNumPeriods * CoggingStepsPerPeriod))
 
 # ---------------------------------------
-# Field-plot video capture (|B| density plot and flux-line contour plot,
-# recorded once per sweep step)
-# ---------------------------------------
-FieldPlotLegend = 1        # mo_showdensityplot: 1 = show color legend
-FieldPlotGrayscale = 0     # mo_showdensityplot: 0 = color, 1 = grey-scale
-BPlotUpper = 2.2           # T, upper bound of the |B| color scale
-BPlotLower = 0.0           # T, lower bound of the |B| color scale
-
-VideoFrameRate = 5         # frames per second in the saved videos
-BFieldVideoFile = "b_field.mp4"
-FluxLinesVideoFile = "flux_lines.mp4"
-
-# ---------------------------------------
 # Windings / circuits (reference.txt's '19 AWG'/A-B-C setup, adapted to the
 # one-pole sector: SectorSlots consecutive slots instead of all Nslots).
 # ---------------------------------------

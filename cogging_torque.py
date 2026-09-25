@@ -1,10 +1,7 @@
 import csv
 import os
-import shutil
-import tempfile
 import time
 
-import cv2
 import femm
 import matplotlib.pyplot as plt
 
@@ -16,30 +13,7 @@ BAND_BOUNDARY = simulation.SLIDING_BAND_NAME
 MODEL_FILE = os.path.join(OUTPUT_DIR, "Cogging_outputs.FEM")
 RESULTS_FILE = os.path.join(OUTPUT_DIR, "Cogging_outputs.csv")
 PLOT_FILE = os.path.join(OUTPUT_DIR, "Cogging_outputs.png")
-VIDEO_FILE = os.path.join(OUTPUT_DIR, "Cogging_outputs.mp4")
 MESH_IMAGE_FILE = os.path.join(OUTPUT_DIR, "Cogging_mesh.bmp")
-
-
-def _capture_frame(frame_dir, step, plot_type):
-    """Zoom-to-fit the postprocessor view and save it as a numbered bitmap
-    frame for later assembly into a video."""
-    femm.mo_zoomnatural()
-    frame_path = os.path.join(frame_dir, f"{plot_type}_{step:04d}.bmp")
-    femm.mo_savebitmap(frame_path)
-    return frame_path
-
-
-def _frames_to_video(frame_paths, output_path, fps):
-    """Assemble an ordered list of image frames into an .mp4 video."""
-    first_frame = cv2.imread(frame_paths[0])
-    height, width = first_frame.shape[:2]
-    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-    writer = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
-    try:
-        for frame_path in frame_paths:
-            writer.write(cv2.imread(frame_path))
-    finally:
-        writer.release()
 
 
 def run_cogging_sweep():
@@ -74,40 +48,22 @@ def run_cogging_sweep():
     angles = []
     torques = []
 
-    frame_dir = tempfile.mkdtemp(prefix="cogging_frames_")
-    b_frames = []
-
     total_steps = config.CoggingNumSteps + 1
 
-    try:
-        for step in range(total_steps):
-            angle = step * config.CoggingStepAngle
-            print(f"Step {step + 1}/{total_steps}: angle = {angle:.4f} deg")
+    for step in range(total_steps):
+        angle = step * config.CoggingStepAngle
+        print(f"Step {step + 1}/{total_steps}: angle = {angle:.4f} deg")
 
-            femm.mi_modifyboundprop(BAND_BOUNDARY, 10, angle)
+        femm.mi_modifyboundprop(BAND_BOUNDARY, 10, angle)
 
-            femm.mi_analyze(1)
-            femm.mi_loadsolution()
+        femm.mi_analyze(1)
+        femm.mi_loadsolution()
 
-            torque = femm.mo_gapintegral(BAND_BOUNDARY, 0)
-            angles.append(angle)
-            torques.append(torque)
+        torque = femm.mo_gapintegral(BAND_BOUNDARY, 0)
+        angles.append(angle)
+        torques.append(torque)
 
-            # |B| density plot frame.
-            femm.mo_showdensityplot(
-                config.FieldPlotLegend,
-                config.FieldPlotGrayscale,
-                config.BPlotUpper,
-                config.BPlotLower,
-                "bmag",
-            )
-            b_frames.append(_capture_frame(frame_dir, step, "b"))
-
-            femm.mo_close()
-
-        _frames_to_video(b_frames, VIDEO_FILE, config.VideoFrameRate)
-    finally:
-        shutil.rmtree(frame_dir, ignore_errors=True)
+        femm.mo_close()
 
     femm.closefemm()
     return angles, torques

@@ -1,10 +1,6 @@
 import csv
-import os
-import shutil
-import tempfile
 import time as walltime
 
-import cv2
 import femm
 import matplotlib.pyplot as plt
 
@@ -16,47 +12,6 @@ RESULTS_FILE = "max_torque_rotating_field.csv"
 TORQUE_PLOT_FILE = "max_torque_rotating_field.png"
 TORQUE_ANGLE_PLOT_FILE = "max_torque_rotating_field_vs_angle.png"
 CURRENT_PLOT_FILE = "max_torque_rotating_field_currents.png"
-B_FIELD_VIDEO_FILE = "max_torque_rotating_field_b_field.mp4"
-FLUX_LINES_VIDEO_FILE = "max_torque_rotating_field_flux_lines.mp4"
-
-
-def _mo_showcontourplot(numcontours, al, au, ptype):
-    """Workaround for a bug in the installed femm package: its
-    mo_showcontourplot (site-packages/femm/__init__.py) builds the Lua
-    call string with a stray comma instead of '+', which makes it pass 2
-    arguments to callfemm() and raise a TypeError before ever reaching
-    FEMM. Build the same command string by hand and call callfemm
-    directly, bypassing the broken wrapper."""
-    femm.callfemm(
-        "mo_showcontourplot("
-        + femm.numc(numcontours)
-        + femm.numc(al)
-        + femm.numc(au)
-        + femm.quote(ptype)
-        + ")"
-    )
-
-
-def _capture_frame(frame_dir, step, plot_type):
-    """Zoom-to-fit the postprocessor view and save it as a numbered bitmap
-    frame for later assembly into a video."""
-    femm.mo_zoomnatural()
-    frame_path = os.path.join(frame_dir, f"{plot_type}_{step:04d}.bmp")
-    femm.mo_savebitmap(frame_path)
-    return frame_path
-
-
-def _frames_to_video(frame_paths, output_path, fps):
-    """Assemble an ordered list of image frames into an .mp4 video."""
-    first_frame = cv2.imread(frame_paths[0])
-    height, width = first_frame.shape[:2]
-    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-    writer = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
-    try:
-        for frame_path in frame_paths:
-            writer.write(cv2.imread(frame_path))
-    finally:
-        writer.release()
 
 
 def run_max_torque_rotating_field_sweep():
@@ -79,10 +34,6 @@ def run_max_torque_rotating_field_sweep():
     torques = []
     currents_a, currents_b, currents_c = [], [], []
 
-    frame_dir = tempfile.mkdtemp(prefix="max_torque_rotating_field_frames_")
-    b_frames = []
-    flux_frames = []
-
     for step in range(config.MaxTorqueRotatingFieldNumSteps + 1):
         # Same sector-vs-full-model rotor reference offset as
         # max_torque.py's run_max_torque_sweep().
@@ -103,22 +54,6 @@ def run_max_torque_rotating_field_sweep():
         femm.mi_loadsolution()
 
         torque = femm.mo_gapintegral(simulation.SLIDING_BAND_NAME, 0)
-
-        # |B| density plot frame.
-        femm.mo_showdensityplot(
-            config.FieldPlotLegend,
-            config.FieldPlotGrayscale,
-            config.BPlotUpper,
-            config.BPlotLower,
-            "bmag",
-        )
-        b_frames.append(_capture_frame(frame_dir, step, "b"))
-
-        # Flux-line (vector potential A contour) plot frame -- numcontours=-1
-        # auto-ranges since the A range isn't known up front.
-        _mo_showcontourplot(-1, 0, 0, "real")
-        flux_frames.append(_capture_frame(frame_dir, step, "flux"))
-
         femm.mo_close()
 
         times.append(sim_time)
@@ -132,12 +67,6 @@ def run_max_torque_rotating_field_sweep():
 
         sim_time += config.MaxTorqueRotatingFieldStepTime
         angle += config.MaxTorqueRotatingFieldStepAngle
-
-    try:
-        _frames_to_video(b_frames, B_FIELD_VIDEO_FILE, config.VideoFrameRate)
-        _frames_to_video(flux_frames, FLUX_LINES_VIDEO_FILE, config.VideoFrameRate)
-    finally:
-        shutil.rmtree(frame_dir, ignore_errors=True)
 
     femm.closefemm()
     return times, angles, torques, currents_a, currents_b, currents_c
