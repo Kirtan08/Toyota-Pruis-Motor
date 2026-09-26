@@ -1,7 +1,10 @@
 # Ignore everything by default...
 *
-# ...except Python source files and this file
+# ...except folders (so files inside them can be matched), Python source files,
+# Markdown files and this file
+!*/
 !*.py
+!*.md
 !.gitignore
 
 # Never track compiled Python caches
