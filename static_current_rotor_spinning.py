@@ -41,8 +41,7 @@ def run_static_current_sweep():
         rotation = step * config.MaxTorqueStaticStepAngle
         angle = config.MaxTorqueInitialAngle + rotation
 
-        # Same sector-vs-full-model rotor reference offset as
-        # max_torque.py's run_max_torque_sweep().
+
         femm.mi_modifyboundprop(
             simulation.SLIDING_BAND_NAME, 10, angle - config.SectorAngle
         )
