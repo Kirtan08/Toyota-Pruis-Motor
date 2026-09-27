@@ -1,7 +1,9 @@
 import csv
+import os
 import sys
 import time as walltime
 
+import cv2
 import femm
 import matplotlib.pyplot as plt
 
@@ -16,18 +18,32 @@ KT_RESULTS_FILE = "torque_vs_current_kt.csv"
 TORQUE_PHASE_PLOT_FILE = "torque_vs_current_phase.png"
 KT_PLOT_FILE = "torque_vs_current_kt.png"
 MODEL_FILE = "ToyotaPrius_TorqueVsCurrent.FEM"
+FRAMES_DIR = "Locked_rotor_frames"
+VIDEO_FILE = "Locked_rotor_B.mp4"
+VIDEO_FPS = 4
+
+# |B| density plot scale, T -- fixed so every frame shares the same colors.
+B_PLOT_MIN = 0
+B_PLOT_MAX = 2
+
+
+def save_flux_density_frame(path):
+    """Save the loaded solution's |B| density plot, zoomed to fit."""
+    femm.mo_zoomnatural()
+    femm.mo_hidepoints()
+    femm.mo_showdensityplot(1, 0, B_PLOT_MAX, B_PLOT_MIN, "bmag")
+    femm.mo_savebitmap(path)
 
 
 def run_torque_vs_current_sweep():
+    os.makedirs(FRAMES_DIR, exist_ok=True)
 
     femm.openfemm()
     simulation.build_model()
 
     simulation.pause("Geometry, materials, and boundary conditions complete.")
 
-    # Rotor position is set once and never touched again. No
-    # "- config.SectorAngle" offset: with anti-periodic boundaries the
-    # extra -45 deg (one pole) would reverse the magnet polarity.
+
     femm.mi_modifyboundprop(
         simulation.SLIDING_BAND_NAME, 10,
         config.MaxTorqueInitialAngle,
@@ -39,6 +55,7 @@ def run_torque_vs_current_sweep():
     peak_currents = []
     peak_phases = []
     peak_torques = []
+    frames = []
 
     for current_amp in config.TorqueVsCurrentAmps:
         phases = []
@@ -60,6 +77,10 @@ def run_torque_vs_current_sweep():
             femm.mi_loadsolution()
 
             torque = femm.mo_gapintegral(simulation.SLIDING_BAND_NAME, 0)
+
+            frame_file = os.path.join(FRAMES_DIR, f"B_{current_amp:03.0f}A_{step:02d}.bmp")
+            save_flux_density_frame(frame_file)
+            frames.append((frame_file, current_amp, phase, torque))
             femm.mo_close()
 
             phases.append(phase)
@@ -81,7 +102,28 @@ def run_torque_vs_current_sweep():
     return {
         "currents": all_currents, "phases": all_phases, "torques": all_torques,
         "peak_currents": peak_currents, "peak_phases": peak_phases, "peak_torques": peak_torques,
+        "frames": frames,
     }
+
+
+def make_video(frames):
+    """Stitch the saved |B| frames into an MP4, labeling each with its
+    current, current angle and torque."""
+    if not frames:
+        return
+    height, width = cv2.imread(frames[0][0]).shape[:2]
+    writer = cv2.VideoWriter(
+        VIDEO_FILE, cv2.VideoWriter_fourcc(*"mp4v"), VIDEO_FPS, (width, height)
+    )
+    for path, current_amp, phase, torque in frames:
+        img = cv2.imread(path)
+        if img.shape[:2] != (height, width):
+            img = cv2.resize(img, (width, height))
+        label = f"I = {current_amp:.0f} A   angle = {phase:.0f} deg   T = {torque:.1f} N*m"
+        cv2.putText(img, label, (10, height - 15), cv2.FONT_HERSHEY_SIMPLEX,
+                    0.6, (0, 0, 0), 2, cv2.LINE_AA)
+        writer.write(img)
+    writer.release()
 
 
 def save_results(results):
@@ -125,6 +167,7 @@ if __name__ == "__main__":
 
     results = run_torque_vs_current_sweep()
     save_results(results)
+    make_video(results["frames"])
 
     elapsed = walltime.perf_counter() - start_time
     print(f"Simulation run time: {elapsed:.1f} s")

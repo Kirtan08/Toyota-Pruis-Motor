@@ -47,9 +47,12 @@ MagnetBr = MU0 * MagnetMur * MagnetHc   # T
 SteelConductivity = 1.9     # MS/m
 SteelLamThickness = 0.34    # mm
 # Lamination stacking factor, applied to the solid-material B-H curve below
-# (flux parallel to the laminations); FEMM's own LamFill is then set to 1 so
-# it isn't applied twice.
+# (flux parallel to the laminations).
 StackingFactor = 0.94
+# FEMM's own LamFill. 0.94 matches the reference script; note FEMM then
+# applies the stacking factor again on top of the already-corrected B-H
+# points. Set to 1 to apply it only once.
+SteelLamFill = 0.94
 
 # Solid-material B-H curve (T, A/m).
 SteelBPoints = [
@@ -84,9 +87,9 @@ def setup_materials():
 
     femm.mi_addmaterial(MAGNET, MagnetMur, MagnetMur, MagnetHc, 0, MagnetConductivity)
 
-    # LamFill = 1: the stacking factor is applied to the B-H points instead,
-    # so FEMM must not apply it a second time.
-    femm.mi_addmaterial(STEEL, 0, 0, 0, 0, SteelConductivity, SteelLamThickness, 0, 1, 0)
+    femm.mi_addmaterial(
+        STEEL, 0, 0, 0, 0, SteelConductivity, SteelLamThickness, 0, SteelLamFill, 0
+    )
     for b, h in zip(SteelBPoints, SteelHPoints):
         femm.mi_addbhpoint(STEEL, laminated_b(b, h), h)
 

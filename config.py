@@ -1,9 +1,11 @@
 import math
 
+MM = 1 / 25.4   # in per mm -- for dimensions taken exactly from the mm reference
+
 # ---------------------------------------
-# Problem setup_ inches 
+# Problem setup_ inches
 # ---------------------------------------
-Length = 3.300
+Length = 83.6 * MM   # 3.2913 in
 
 # ---------------------------------------
 StatorSteelMeshSize = 0.05   # tooth/yoke back-iron -- coarse, low field gradient
@@ -44,8 +46,8 @@ StatorPitchSlotBot = math.pi * (
 # ---------------------------------------
 Npoles = 8
 
-RotorOD = 6.314
-RotorID = 4.356
+RotorOD = 160.47 * MM   # 6.3177 in
+RotorID = 111 * MM      # 4.3701 in
 
 BridgeID = 0.370
 
@@ -55,7 +57,7 @@ RibWidth = 0.551
 
 DistMinMag = 0.118
 
-MagThick = 0.255
+MagThick = 6.5 * MM    # 0.2559 in
 MagWidth = 0.744
 
 Bridge = 0.056
@@ -195,7 +197,7 @@ MaxTorqueRotatingFieldStepAngle = (720 / Npoles) / MaxTorqueRotatingFieldNumStep
 
 # ---------------------------------------
 # TorqueVsCurrentAmps = [50, 75, 100, 125, 150, 200, 250]  # A, tested current levels
-TorqueVsCurrentAmps = [50]  # A, tested current levels
+TorqueVsCurrentAmps = [250]  # A, tested current levels
 TorqueVsCurrentPhaseInit = 0    # deg electrical, phase sweep start
 TorqueVsCurrentPhaseStep = 8    # deg electrical, phase sweep resolution
 TorqueVsCurrentPhaseSteps = 22  # niterat -- sweeps Phase 0..176 deg, 23 points
