@@ -163,7 +163,7 @@ NPoleSlotLCM = Nslots * Npoles // math.gcd(Nslots, Npoles)
 CoggingPeriodAngle = 360 / NPoleSlotLCM   # 7.5 deg here
 
 # Angular resolution of the sweep: how many solve steps cover one period.
-CoggingStepsPerPeriod = 60
+CoggingStepsPerPeriod = 30
 CoggingStepAngle = CoggingPeriodAngle / CoggingStepsPerPeriod
 
 # Total mechanical angle to sweep.
