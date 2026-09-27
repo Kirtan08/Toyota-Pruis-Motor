@@ -541,7 +541,10 @@ def setup_materials():
 
     femm.mi_addmaterial("N36Z_20", 1.03, 1.03, 920000, 0, 0.667)
 
-    femm.mi_addmaterial("M19_29G", 0, 0, 0, 0, 1.9, 0.34, 0, 0.94, 0)
+    # LamFill = 1: the stacking factor is applied to the B-H points below
+    # instead, so FEMM must not apply it a second time.
+    femm.mi_addmaterial("M19_29G", 0, 0, 0, 0, 1.9, 0.34, 0, 1, 0)
+    # Solid-material B-H curve (T, A/m).
     b_points = [
         0, 0.05, 0.1, 0.15, 0.36, 0.54, 0.65, 0.99, 1.2, 1.28, 1.33, 1.36,
         1.44, 1.52, 1.58, 1.63, 1.67, 1.8, 1.9, 2, 2.1, 2.3, 2.5,
@@ -553,7 +556,17 @@ def setup_materials():
         111407, 190984, 350135, 509252, 560177.2, 1527756,
     ]
     for b, h in zip(b_points, h_points):
-        femm.mi_addbhpoint("M19_29G", b, h)
+        femm.mi_addbhpoint("M19_29G", laminated_b(b, h), h)
+
+
+def laminated_b(b_solid, h_solid, sf=None):
+    """Effective flux density of a lamination stack with flux parallel to
+    the laminations: Bparallel = SF*Bsolid + (1 - SF)*mu0*Hsolid. H is the
+    same in the iron and the gaps between laminations, so it is unchanged."""
+    if sf is None:
+        sf = config.StackingFactor
+    mu0 = 4 * math.pi * 1e-7
+    return sf * b_solid + (1 - sf) * mu0 * h_solid
 
 
 def assign_block_labels(split_stator=False, split_rotor=False):
@@ -793,6 +806,13 @@ def setup_boundary_conditions(split_stator_radius=None, split_rotor_radius=None)
     # Outer Dirichlet A=0 -- true exterior of the modeled domain.
     femm.mi_addboundprop("A=0", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
     femm.mi_selectarcsegment(c.StatorOD / 2 * cosd(mid), c.StatorOD / 2 * sind(mid))
+    femm.mi_setarcsegmentprop(1, "A=0", 0, 0)
+    femm.mi_clearselected()
+
+    # Inner Dirichlet A=0 on the rotor bore, as in the reference script: no
+    # flux crosses into the (unmodeled) shaft. Left unset, FEMM's default
+    # Neumann condition would let flux lines leave the bore at right angles.
+    femm.mi_selectarcsegment(c.RotorID / 2 * cosd(mid), c.RotorID / 2 * sind(mid))
     femm.mi_setarcsegmentprop(1, "A=0", 0, 0)
     femm.mi_clearselected()
 

@@ -12,12 +12,12 @@ Length = 3.300
 # chosen size -- lets the airgap/magnet regions, which drive torque
 # accuracy, be resolved much finer than the bulk steel back-iron.
 # ---------------------------------------
-StatorSteelMeshSize = 0.5   # was 0.05; tooth/yoke back-iron -- coarse, low field gradient
-RotorSteelMeshSize = 0.5   # was 0.05; rotor lamination -- coarse, low field gradient
-AirgapMeshSize = 0.5   # was 0.0025; airgap ring -- fine, resolves torque-critical field
-MagnetMeshSize = 0.5   # was 0.01; magnet body -- fine
-MagnetAirMeshSize = 0.5   # was 0.005; end-cap (outer) air pockets inside each pole leg -- fine
-DuctMeshSize = 0.5   # was 0.05; duct/flux-barrier air pocket inside each pole leg -- coarse
+StatorSteelMeshSize = 0.05   # tooth/yoke back-iron -- coarse, low field gradient
+RotorSteelMeshSize = 0.05   # rotor lamination -- coarse, low field gradient
+AirgapMeshSize = 0.0025   # airgap ring -- fine, resolves torque-critical field
+MagnetMeshSize = 0.01   # magnet body -- fine
+MagnetAirMeshSize = 0.005   # end-cap (outer) air pockets inside each pole leg -- fine
+DuctMeshSize = 0.05   # duct/flux-barrier air pocket inside each pole leg -- coarse
 
 # ---------------------------------------
 # Stator Geometry
@@ -78,15 +78,15 @@ DuctMaxDia = RotorOD - 2 * Bridge
 # used by cogging_torque.py; every other script keeps the single-region
 # defaults above.
 # ---------------------------------------
-SlotAirMeshSize = 0.5   # was 0.08; in, unwound slot body -- very coarse
+SlotAirMeshSize = 0.08   # in, unwound slot body -- very coarse
 
 # Radius separating the dense stator teeth from the coarse back-iron yoke.
 # Must clear the tooth-bottom fillet, which bulges out to ~4.51 in with the
 # geometry above (StatorID=6.375, ShoeHeight/ShoeRadius/SlotHeight as set),
 # and stay under StatorOD/2=5.3 in.
 ToothSplitRadius = 4.55
-ToothMeshSize = 0.5   # was 0.03; in, tooth body (shoe band -> ToothSplitRadius) -- medium
-YokeMeshSize = 0.5   # was 0.1; in, back-iron yoke -- very coarse
+ToothMeshSize = 0.03   # in, tooth body (shoe band -> ToothSplitRadius) -- medium
+YokeMeshSize = 0.1   # in, back-iron yoke -- very coarse
 
 # Radius separating the thin, torque-critical tooth-shoe band facing the
 # airgap from the rest of the tooth body -- just past the shoe, where the
@@ -95,7 +95,7 @@ YokeMeshSize = 0.5   # was 0.1; in, back-iron yoke -- very coarse
 # keeps the arc clear of those nodes so the mesh doesn't form slivers.
 ShoeSplitMargin = 0.05       # in, beyond the shoe corner radius
 ShoeSplitRadius = StatorID / 2 + ShoeHeight + ShoeRadius + ShoeSplitMargin
-ShoeMeshSize = 0.5   # was 0.0025; in, tooth-shoe band -- very dense (matches airgap)
+ShoeMeshSize = 0.0025   # in, tooth-shoe band -- very dense (matches airgap)
 
 # Radius (full 0-to-SectorAngle arc) separating the dense rotor-edge band
 # facing the stator from the coarse bulk rotor steel -- set to the
@@ -104,15 +104,15 @@ ShoeMeshSize = 0.5   # was 0.0025; in, tooth-shoe band -- very dense (matches ai
 # pockets, which stay just inside DuctMaxDia/2 (~3.10 in, vs. RotorOD/2's
 # 3.157 in) by design.
 RotorEdgeRadius = DuctMaxDia / 2
-RotorEdgeMeshSize = 0.5   # was 0.0025; in, rotor-edge band (second layer, below the skin) -- dense
-RotorBulkMeshSize = 0.5   # was 0.1; in, rotor steel below RotorInnerRadius -- very coarse
+RotorEdgeMeshSize = 0.0025   # in, rotor-edge band (second layer, below the skin) -- dense
+RotorBulkMeshSize = 0.1   # in, rotor steel below RotorInnerRadius -- very coarse
 
 # Radius of an inner rotor arc, just inside the deepest magnet-pocket point
 # (~2.521 in, the magnet's inner corner) so it crosses no pocket. The layer
 # between it and RotorEdgeRadius -- the steel around the magnets -- gets a
 # fine mesh; only the steel below it stays at RotorBulkMeshSize.
 RotorInnerRadius = 2.50
-RotorMidMeshSize = 0.5   # was 0.01; in, rotor steel around the magnets -- fine
+RotorMidMeshSize = 0.01   # in, rotor steel around the magnets -- fine
 
 # Radius of a second, outer rotor arc splitting the edge band again: the
 # thin skin between it and RotorOD (the surface directly facing the airgap)
@@ -120,7 +120,7 @@ RotorMidMeshSize = 0.5   # was 0.01; in, rotor steel around the magnets -- fine
 # and RotorOD/2 (3.157 in).
 RotorSkinThick = 0.02        # in, skin thickness below RotorOD
 RotorSkinRadius = RotorOD / 2 - RotorSkinThick
-RotorSkinMeshSize = 0.5   # was 0.0025; in, rotor outer skin -- very dense (matches airgap)
+RotorSkinMeshSize = 0.0025   # in, rotor outer skin -- very dense (matches airgap)
 
 PolePitch = 360 / Npoles        # 45 deg, rotor pole pitch
 PoleHalfAngle = PolePitch / 2   # 22.5 deg
@@ -163,7 +163,7 @@ NPoleSlotLCM = Nslots * Npoles // math.gcd(Nslots, Npoles)
 CoggingPeriodAngle = 360 / NPoleSlotLCM   # 7.5 deg here
 
 # Angular resolution of the sweep: how many solve steps cover one period.
-CoggingStepsPerPeriod = 30
+CoggingStepsPerPeriod = 60
 CoggingStepAngle = CoggingPeriodAngle / CoggingStepsPerPeriod
 
 # Total mechanical angle to sweep.
@@ -172,13 +172,20 @@ CoggingNumPeriods = CoggingSweepAngle / CoggingPeriodAngle
 CoggingNumSteps = int(round(CoggingNumPeriods * CoggingStepsPerPeriod))
 
 # ---------------------------------------
+# Lamination stacking factor for the M19_29G steel. Applied to the solid-
+# material B-H curve in simulation.setup_materials() (flux parallel to the
+# laminations); FEMM's own LamFill is then set to 1 so it isn't applied twice.
+# ---------------------------------------
+StackingFactor = 0.94
+
+# ---------------------------------------
 # Windings / circuits (reference.txt's '19 AWG'/A-B-C setup, adapted to the
 # one-pole sector: SectorSlots consecutive slots instead of all Nslots).
 # ---------------------------------------
 WireDiameter = 0.912        # mm -- mi_addmaterial's WireD is always mm,
                              # regardless of the document's own length units
 WireConductivity = 58       # MS/m, copper (reference.txt's '19 AWG' Cduct)
-WindingMeshSize = 0.5   # was 0.020; in, per-block mesh size for the coil labels
+WindingMeshSize = 0.020   # in, per-block mesh size for the coil labels
 
 Current = 10                # A, phase current amplitude
 Turns = 117                 # turns per coil side
