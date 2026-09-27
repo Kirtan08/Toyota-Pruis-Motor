@@ -25,10 +25,12 @@ def run_torque_vs_current_sweep():
 
     simulation.pause("Geometry, materials, and boundary conditions complete.")
 
-    # Rotor position is set once and never touched again.
+    # Rotor position is set once and never touched again. No
+    # "- config.SectorAngle" offset: with anti-periodic boundaries the
+    # extra -45 deg (one pole) would reverse the magnet polarity.
     femm.mi_modifyboundprop(
         simulation.SLIDING_BAND_NAME, 10,
-        config.MaxTorqueInitialAngle - config.SectorAngle,
+        config.MaxTorqueInitialAngle,
     )
 
     all_currents = []

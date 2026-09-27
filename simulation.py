@@ -1,6 +1,7 @@
 import femm
 import math
 import config
+import materials
 
 # ---------------------------------------
 # Helper functions for degree trig
@@ -528,47 +529,6 @@ def stator_slot_label_point(angle_offset=0):
     return r * cosd(angle_offset), r * sind(angle_offset)
 
 
-def setup_materials():
-    """Import/define every material referenced by assign_block_labels(),
-    using the exact names and property values from reference.txt (the
-    working FEMM reference script for this motor)."""
-    femm.mi_getmaterial("Air")
-
-    femm.mi_addmaterial(
-        "19 AWG", 1.0, 1.0, 0, 0, config.WireConductivity, 0, 0, 0, 3, 0, 0, 1,
-        config.WireDiameter,
-    )
-
-    femm.mi_addmaterial("N36Z_20", 1.03, 1.03, 920000, 0, 0.667)
-
-    # LamFill = 1: the stacking factor is applied to the B-H points below
-    # instead, so FEMM must not apply it a second time.
-    femm.mi_addmaterial("M19_29G", 0, 0, 0, 0, 1.9, 0.34, 0, 1, 0)
-    # Solid-material B-H curve (T, A/m).
-    b_points = [
-        0, 0.05, 0.1, 0.15, 0.36, 0.54, 0.65, 0.99, 1.2, 1.28, 1.33, 1.36,
-        1.44, 1.52, 1.58, 1.63, 1.67, 1.8, 1.9, 2, 2.1, 2.3, 2.5,
-        2.563994494, 3.779889874,
-    ]
-    h_points = [
-        0, 22.28, 25.46, 31.83, 47.74, 63.66, 79.57, 159.15, 318.3, 477.46,
-        636.61, 795.77, 1591.5, 3183, 4774.6, 6366.1, 7957.7, 15915, 31830,
-        111407, 190984, 350135, 509252, 560177.2, 1527756,
-    ]
-    for b, h in zip(b_points, h_points):
-        femm.mi_addbhpoint("M19_29G", laminated_b(b, h), h)
-
-
-def laminated_b(b_solid, h_solid, sf=None):
-    """Effective flux density of a lamination stack with flux parallel to
-    the laminations: Bparallel = SF*Bsolid + (1 - SF)*mu0*Hsolid. H is the
-    same in the iron and the gaps between laminations, so it is unchanged."""
-    if sf is None:
-        sf = config.StackingFactor
-    mu0 = 4 * math.pi * 1e-7
-    return sf * b_solid + (1 - sf) * mu0 * h_solid
-
-
 def assign_block_labels(split_stator=False, split_rotor=False):
     """Place one block label per closed region and assign its material.
     `split_stator`/`split_rotor` label the tooth/yoke and rotor-edge/bulk
@@ -597,7 +557,7 @@ def assign_block_labels(split_stator=False, split_rotor=False):
         x, y = r_tooth * cosd(a_tooth), r_tooth * sind(a_tooth)
         femm.mi_addblocklabel(x, y)
         femm.mi_selectlabel(x, y)
-        femm.mi_setblockprop("M19_29G", 0, c.ToothMeshSize, "<None>", 0, STATOR_STEEL_GROUP, 0)
+        femm.mi_setblockprop(materials.STEEL, 0, c.ToothMeshSize, "<None>", 0, STATOR_STEEL_GROUP, 0)
         femm.mi_clearselected()
 
         # Below ShoeSplitRadius, the slot mouths separate every tooth tip
@@ -612,7 +572,7 @@ def assign_block_labels(split_stator=False, split_rotor=False):
             x, y = r_shoe * cosd(a_shoe), r_shoe * sind(a_shoe)
             femm.mi_addblocklabel(x, y)
             femm.mi_selectlabel(x, y)
-            femm.mi_setblockprop("M19_29G", 0, c.ShoeMeshSize, "<None>", 0, STATOR_STEEL_GROUP, 0)
+            femm.mi_setblockprop(materials.STEEL, 0, c.ShoeMeshSize, "<None>", 0, STATOR_STEEL_GROUP, 0)
             femm.mi_clearselected()
 
         # The shoe arc also crosses every slot cavity, cutting a thin air
@@ -629,7 +589,7 @@ def assign_block_labels(split_stator=False, split_rotor=False):
             x, y = r_strip * cosd(a_slot), r_strip * sind(a_slot)
             femm.mi_addblocklabel(x, y)
             femm.mi_selectlabel(x, y)
-            femm.mi_setblockprop("Air", 0, c.ShoeMeshSize, "<None>", 0, SLOT_GROUP, 0)
+            femm.mi_setblockprop(materials.AIR, 0, c.ShoeMeshSize, "<None>", 0, SLOT_GROUP, 0)
             femm.mi_clearselected()
 
         r_yoke = (c.ToothSplitRadius + c.StatorOD / 2) / 2
@@ -637,13 +597,13 @@ def assign_block_labels(split_stator=False, split_rotor=False):
         x, y = r_yoke * cosd(a_yoke), r_yoke * sind(a_yoke)
         femm.mi_addblocklabel(x, y)
         femm.mi_selectlabel(x, y)
-        femm.mi_setblockprop("M19_29G", 0, c.YokeMeshSize, "<None>", 0, STATOR_STEEL_GROUP, 0)
+        femm.mi_setblockprop(materials.STEEL, 0, c.YokeMeshSize, "<None>", 0, STATOR_STEEL_GROUP, 0)
         femm.mi_clearselected()
     else:
         x, y = stator_steel_label_point(c.StatorBaseRotation)
         femm.mi_addblocklabel(x, y)
         femm.mi_selectlabel(x, y)
-        femm.mi_setblockprop("M19_29G", 0, c.StatorSteelMeshSize, "<None>", 0, STATOR_STEEL_GROUP, 0)
+        femm.mi_setblockprop(materials.STEEL, 0, c.StatorSteelMeshSize, "<None>", 0, STATOR_STEEL_GROUP, 0)
         femm.mi_clearselected()
 
     if split_rotor:
@@ -654,7 +614,7 @@ def assign_block_labels(split_stator=False, split_rotor=False):
         x, y = r_bulk * cosd(a_bulk), r_bulk * sind(a_bulk)
         femm.mi_addblocklabel(x, y)
         femm.mi_selectlabel(x, y)
-        femm.mi_setblockprop("M19_29G", 0, c.RotorBulkMeshSize, "<None>", 0, ROTOR_STEEL_GROUP, 0)
+        femm.mi_setblockprop(materials.STEEL, 0, c.RotorBulkMeshSize, "<None>", 0, ROTOR_STEEL_GROUP, 0)
         femm.mi_clearselected()
 
         # Steel around the magnets, RotorInnerRadius -> RotorEdgeRadius.
@@ -667,7 +627,7 @@ def assign_block_labels(split_stator=False, split_rotor=False):
         x, y = r_mid * cosd(a_bulk), r_mid * sind(a_bulk)
         femm.mi_addblocklabel(x, y)
         femm.mi_selectlabel(x, y)
-        femm.mi_setblockprop("M19_29G", 0, c.RotorMidMeshSize, "<None>", 0, ROTOR_STEEL_GROUP, 0)
+        femm.mi_setblockprop(materials.STEEL, 0, c.RotorMidMeshSize, "<None>", 0, ROTOR_STEEL_GROUP, 0)
         femm.mi_clearselected()
 
         # Dense edge band + very dense outer skin: two clean full-sector
@@ -683,13 +643,13 @@ def assign_block_labels(split_stator=False, split_rotor=False):
             x, y = r_edge * cosd(a_edge), r_edge * sind(a_edge)
             femm.mi_addblocklabel(x, y)
             femm.mi_selectlabel(x, y)
-            femm.mi_setblockprop("M19_29G", 0, mesh_size, "<None>", 0, ROTOR_STEEL_GROUP, 0)
+            femm.mi_setblockprop(materials.STEEL, 0, mesh_size, "<None>", 0, ROTOR_STEEL_GROUP, 0)
             femm.mi_clearselected()
     else:
         x, y = rotor_steel_label_point()
         femm.mi_addblocklabel(x, y)
         femm.mi_selectlabel(x, y)
-        femm.mi_setblockprop("M19_29G", 0, c.RotorSteelMeshSize, "<None>", 0, ROTOR_STEEL_GROUP, 0)
+        femm.mi_setblockprop(materials.STEEL, 0, c.RotorSteelMeshSize, "<None>", 0, ROTOR_STEEL_GROUP, 0)
         femm.mi_clearselected()
 
     # Airgap ring between the sliding band and the stator bore -- now closed
@@ -703,7 +663,7 @@ def assign_block_labels(split_stator=False, split_rotor=False):
     x, y = r * cosd(a), r * sind(a)
     femm.mi_addblocklabel(x, y)
     femm.mi_selectlabel(x, y)
-    femm.mi_setblockprop("Air", 0, c.AirgapMeshSize, "<None>", 0, AIRGAP_GROUP, 0)
+    femm.mi_setblockprop(materials.AIR, 0, c.AirgapMeshSize, "<None>", 0, AIRGAP_GROUP, 0)
     femm.mi_clearselected()
 
     for angle_offset, mirror in ((0, False), (c.SectorAngle, True)):
@@ -714,13 +674,13 @@ def assign_block_labels(split_stator=False, split_rotor=False):
             x, y = pt
             femm.mi_addblocklabel(x, y)
             femm.mi_selectlabel(x, y)
-            femm.mi_setblockprop("Air", 0, mesh_size, "<None>", 0, MAGNET_GROUP, 0)
+            femm.mi_setblockprop(materials.AIR, 0, mesh_size, "<None>", 0, MAGNET_GROUP, 0)
             femm.mi_clearselected()
 
         x, y = magnet_pt
         femm.mi_addblocklabel(x, y)
         femm.mi_selectlabel(x, y)
-        femm.mi_setblockprop("N36Z_20", 0, c.MagnetMeshSize, "<None>", magdir, MAGNET_GROUP, 0)
+        femm.mi_setblockprop(materials.MAGNET, 0, c.MagnetMeshSize, "<None>", magdir, MAGNET_GROUP, 0)
         femm.mi_clearselected()
 
 
@@ -758,7 +718,7 @@ def assign_windings():
         # automesh=1 (smartmesh-driven) for now -- manual c.WindingMeshSize
         # commented out: femm.mi_setblockprop("19 AWG", 0, c.WindingMeshSize, c.SlotCircuits[k], 0, SLOT_GROUP, c.SlotCoilDirs[k] * c.Turns)
         femm.mi_setblockprop(
-            "19 AWG", 1, 0, c.SlotCircuits[k], 0, SLOT_GROUP,
+            materials.WIRE, 1, 0, c.SlotCircuits[k], 0, SLOT_GROUP,
             c.SlotCoilDirs[k] * c.Turns,
         )
         femm.mi_clearselected()
@@ -775,7 +735,7 @@ def assign_slot_air():
         x, y = stator_slot_label_point(angle_offset)
         femm.mi_addblocklabel(x, y)
         femm.mi_selectlabel(x, y)
-        femm.mi_setblockprop("Air", 0, c.SlotAirMeshSize, "<None>", 0, SLOT_GROUP, 0)
+        femm.mi_setblockprop(materials.AIR, 0, c.SlotAirMeshSize, "<None>", 0, SLOT_GROUP, 0)
         femm.mi_clearselected()
 
 
@@ -986,7 +946,7 @@ def build_model(windings=True, split_stator_mesh=False, split_rotor_mesh=False):
         draw_rotor_skin_split(config.RotorSkinRadius)
         draw_rotor_inner_split(config.RotorInnerRadius)
 
-    setup_materials()
+    materials.setup_materials()
     assign_block_labels(split_stator=split_stator_mesh, split_rotor=split_rotor_mesh)
     if windings:
         setup_circuits()

@@ -24,10 +24,11 @@ pip install pyfemm matplotlib
 | File | Purpose |
 | --- | --- |
 | [`config.py`](config.py) | All parameters: geometry, mesh sizes, windings, and sweep settings |
-| [`simulation.py`](simulation.py) | Builds the model: geometry, materials, windings, boundary conditions. Also runs on its own to build, save and solve one model (`ToyotaPrius.FEM`) |
+| [`materials.py`](materials.py) | Material names and properties (M19_29G B-H curve, N36Z_20 magnet with temperature derating, 19 AWG copper) and `setup_materials()` |
+| [`simulation.py`](simulation.py) | Builds the model: geometry, windings, boundary conditions. Also runs on its own to build, save and solve one model (`ToyotaPrius.FEM`) |
 | [`cogging_torque.py`](cogging_torque.py) | Cogging torque sweep (no current) |
 | [`static_current_rotor_spinning.py`](static_current_rotor_spinning.py) | Torque vs rotor position with fixed phase currents |
-| [`torque_vs_current.py`](torque_vs_current.py) | Peak torque vs current amplitude (Kt curve) |
+| [`Locked_rotor_test.py`](Locked_rotor_test.py) | Peak torque vs current amplitude (Kt curve) |
 | [`notes/`](notes/) | Dated working notes |
 
 ## Running a simulation
@@ -70,8 +71,8 @@ Output: `static_current_rotor_spinning.csv` and
 ### Torque vs current (Kt curve)
 
 ```
-python torque_vs_current.py          # all currents in config.TorqueVsCurrentAmps
-python torque_vs_current.py 150      # a single current amplitude, in A
+python Locked_rotor_test.py          # all currents in config.TorqueVsCurrentAmps
+python Locked_rotor_test.py 150      # a single current amplitude, in A
 ```
 
 Holds the rotor fixed and, for each current amplitude, sweeps the current phase
