@@ -46,9 +46,14 @@ MTPA_ANGLES = {0: 90, 50: 120, 75: 124, 100: 128, 125: 132, 150: 136, 200: 140, 
 
 N_SECTORS = round(360 / config.SectorAngle)   # 8 -- one pole per sector, in series
 
-# B probes: middle of the stator tooth centered at one slot pitch (inside
-# the sector, off its boundary), and the back iron above it.
-PROBE_ANGLE = config.ToothPitch   # deg, tooth centerline
+# B probes: middle of the stator tooth at 0 deg, and the back iron above it
+# -- the reference's tooth, between a C slot (-3.75 deg) and an A slot
+# (3.75 deg). Under load each tooth sees a different stator field, so this
+# must be the same tooth as the reference (the one at 7.5 deg, between the
+# two A slots, gave 6-10% lower B). 0 deg is the sector cut, so the probe
+# sits 0.1 deg inside it, still near the centerline of the ~4.5 deg wide
+# tooth.
+PROBE_ANGLE = 0.1   # deg
 POST_HEIGHT = (config.SlotDia / 2 + config.SlotHeight
                + config.ShoeRadius + config.ShoeHeight)
 TOOTH_RADIUS = config.StatorID / 2 + POST_HEIGHT / 2

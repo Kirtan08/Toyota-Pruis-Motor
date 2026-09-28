@@ -43,11 +43,21 @@ Sigma = materials.WireConductivity * 1e6   # S/m
 Rho = 1 / Sigma                  # Ohm*m
 
 SkinDepth = np.sqrt(2 * Rho / Omega / Mu0)   # m, one per speed
+
+
+def phase_resistance_ac(speed_rpm, temp=20):
+    """AC phase resistance [Ohm] at speed_rpm and winding temperature temp
+    [deg C]: DC resistance at temp, raised by the skin effect. Either
+    argument may be a numpy array."""
+    r_dc = PhaseResistDC_20C * (1 + Alpha_coef * (np.asarray(temp) - 20))
+    freq = Npoles * np.asarray(speed_rpm) / 120
+    skin_depth = np.sqrt(2 * Rho / (2 * math.pi * freq) / Mu0)
+    return r_dc * (1 + 1 / 9 * (SlotDepth / 1000 / skin_depth) ** 2
+                   * (AWG_dia / 1000 / skin_depth) ** 2)
+
+
 # Rows: speed, columns: temperature.
-PhaseResistAC = PhaseResistDC[np.newaxis, :] * (
-    1 + 1 / 9 * (SlotDepth / 1000 / SkinDepth[:, np.newaxis]) ** 2
-    * (AWG_dia / 1000 / SkinDepth[:, np.newaxis]) ** 2
-)
+PhaseResistAC = phase_resistance_ac(SpeedRPM[:, np.newaxis], Temp[np.newaxis, :])
 
 
 def print_results():

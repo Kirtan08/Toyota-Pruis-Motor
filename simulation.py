@@ -384,15 +384,16 @@ def rotor_pole_leg_label_points(angle_offset=0, mirror=False):
 
 def rotor_pole_leg_magdirection(angle_offset=0, mirror=False):
     """Magnetization angle (deg, absolute, 0 = +x axis) for the magnet
-    region: perpendicular to the magnet's long axis, pointing radially
-    outward for mirror=False and radially inward for mirror=True, forming
-    a coherent V-pole with opposite poles facing each other."""
-    # Invert the magnetization direction between the two pole legs so the
-    # pair is flipped relative to the original orientation.
+    region: perpendicular to the magnet's long axis (at alpha). The leg at
+    0 deg (mirror=False) points into the rotor, making the pole at 0 deg a
+    south pole; the mirrored leg at SectorAngle points out of it, making the
+    pole at SectorAngle a north pole -- the alternating polarity the
+    anti-periodic sector boundaries assume. As in the reference script
+    (magdir -90+alpha, then flipped by 180 deg for the opposite pole)."""
     if mirror:
-        local_angle = config.alpha - 55
+        local_angle = 90 - config.alpha   # outward normal of the mirrored leg
     else:
-        local_angle = config.alpha + 90
+        local_angle = config.alpha + 90   # inward normal of the leg at 0 deg
     return (local_angle + angle_offset) % 360
 
 
